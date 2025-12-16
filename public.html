@@ -69,7 +69,14 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
     import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-    const firebaseConfig = PASTE_YOUR_FIREBASE_CONFIG_HERE;
+   const firebaseConfig = {
+    apiKey: "AIzaSyB2nzBxyoy-d4hhuYig8osV1UQeAz4p7KA",
+    authDomain: "mini-crm-assignment.firebaseapp.com",
+    projectId: "mini-crm-assignment",
+    storageBucket: "mini-crm-assignment.firebasestorage.app",
+    messagingSenderId: "148305586380",
+    appId: "1:148305586380:web:f43188e7a9e39dd0833a69"
+  };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
