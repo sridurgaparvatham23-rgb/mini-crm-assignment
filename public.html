@@ -1,8 +1,131 @@
 <!doctype html>
-<htmlllang="en">
-  <head>
-    
-  </head>
-  <body>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mini-CRM | Public Lead Form</title>
+  <style>
+    body { font-family: system-ui, Arial; margin: 0; background:#f6f7fb; }
+    .wrap { max-width: 820px; margin: 32px auto; padding: 0 16px; }
+    .card { background:#fff; border-radius:14px; padding:20px; box-shadow: 0 10px 30px rgba(0,0,0,.06); }
+    h1 { margin: 0 0 6px; font-size: 22px; }
+    p { margin: 0 0 14px; color:#444; }
+    label { display:block; font-size: 13px; margin: 10px 0 6px; color:#333; }
+    input, textarea { width:100%; padding:10px 12px; border:1px solid #d6d8e2; border-radius:10px; font-size: 14px; }
+    textarea { min-height: 90px; resize: vertical; }
+    .row { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .btn { margin-top: 14px; padding: 10px 14px; border: 0; border-radius: 10px; cursor:pointer; font-weight: 600; }
+    .btn.primary { background:#2b6cff; color:#fff; }
+    .msg { margin-top: 12px; padding: 10px 12px; border-radius: 10px; display:none; }
+    .msg.ok { background:#e7f7ee; color:#145c2e; display:block; }
+    .msg.err { background:#fdecec; color:#7a1c1c; display:block; }
+    .small { font-size: 12px; color:#666; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Public Lead Capture</h1>
+    <p>Submit a sales enquiry. Our team will contact you.</p>
+
+    <div class="card">
+      <form id="leadForm">
+        <div class="row">
+          <div>
+            <label for="fullName">Full name *</label>
+            <input id="fullName" required maxlength="80" />
+          </div>
+          <div>
+            <label for="company">Company *</label>
+            <input id="company" required maxlength="80" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="email">Email *</label>
+            <input id="email" type="email" required maxlength="120" />
+          </div>
+          <div>
+            <label for="phone">Phone (optional)</label>
+            <input id="phone" maxlength="30" />
+          </div>
+        </div>
+
+        <label for="estimatedValue">Estimated deal value (€) *</label>
+        <input id="estimatedValue" type="number" min="0" step="1" required />
+
+        <label for="message">What do you need? *</label>
+        <textarea id="message" required maxlength="1000"></textarea>
+
+        <button class="btn primary" type="submit">Submit lead</button>
+
+        <div id="msg" class="msg"></div>
+        <div class="small">This is the public module. Staff module will read the same Firestore data.</div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    const firebaseConfig = PASTE_YOUR_FIREBASE_CONFIG_HERE;
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const form = document.getElementById("leadForm");
+    const msg = document.getElementById("msg");
+
+    function show(kind, text) {
+      msg.className = "msg " + (kind === "ok" ? "ok" : "err");
+      msg.textContent = text;
+    }
+
+    function clean(s) { return String(s ?? "").trim(); }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      msg.className = "msg"; msg.textContent = "";
+
+      const fullName = clean(document.getElementById("fullName").value);
+      const company = clean(document.getElementById("company").value);
+      const email = clean(document.getElementById("email").value);
+      const phone = clean(document.getElementById("phone").value);
+      const estimatedValueRaw = document.getElementById("estimatedValue").value;
+      const message = clean(document.getElementById("message").value);
+
+      const estimatedValue = Number(estimatedValueRaw);
+
+      if (!fullName || !company || !email || !message) {
+        return show("err", "Please complete all required fields.");
+      }
+      if (!Number.isFinite(estimatedValue) || estimatedValue < 0) {
+        return show("err", "Estimated deal value must be 0 or more.");
+      }
+
+      try {
+        await addDoc(collection(db, "leads"), {
+          fullName,
+          company,
+          email,
+          phone,
+          estimatedValue,
+          message,
+          stage: "New",
+          internalNotes: "",
+          owner: "",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+
+        form.reset();
+        show("ok", "Submitted successfully. Thank you.");
+      } catch (err) {
+        console.error(err);
+        show("err", "Submission failed. Check console for errors.");
+      }
+    });
+  </script>
+</body>
 </html>
